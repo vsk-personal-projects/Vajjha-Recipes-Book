@@ -11,23 +11,40 @@ export default function App() {
   const [showForm, setShowForm] = useState(false);
   const [notice, setNotice] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loadingRecipes, setLoadingRecipes] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const saveLock = useRef(false);
 
   async function request(path, options = {}) {
+    const headers = {
+      ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      ...(options.headers || {}),
+    };
     const response = await fetch(API + path, {
       ...options,
-      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+      headers,
+      cache: options.cache || 'no-store',
     });
-    if (!response.ok) throw new Error('Request failed');
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      throw new Error(`HTTP ${response.status}${detail ? `: ${detail.slice(0, 180)}` : ''}`);
+    }
     return response.status === 204 ? null : response.json();
   }
 
   async function loadRecipes() {
+    setLoadingRecipes(true);
+    setLoadError('');
     try {
-      const data = await request('/api/recipes');
+      const data = await request('/api/recipes', { method: 'GET' });
+      if (!Array.isArray(data)) throw new Error('The recipe service returned an unexpected response.');
       setRecipes(data);
-    } catch {
-      setNotice('Could not connect to your recipe notebook. Please try again.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown connection error';
+      setLoadError(message);
+      setNotice('Could not load your saved recipes. Your database entries have not been deleted.');
+    } finally {
+      setLoadingRecipes(false);
     }
   }
 
@@ -135,7 +152,18 @@ export default function App() {
             </div>
           </div>
 
-          {visibleRecipes.length ? (
+          {loadingRecipes ? (
+            <div className="mt-6 rounded-3xl border border-stone-200 bg-white/70 px-5 py-14 text-center text-sm text-stone-500">
+              Loading your saved recipes…
+            </div>
+          ) : loadError ? (
+            <div className="mt-6 rounded-3xl border border-amber-200 bg-amber-50/60 px-5 py-12 text-center">
+              <h3 className="font-display text-2xl">Your recipes could not be loaded.</h3>
+              <p className="mt-2 text-sm text-stone-600">Your saved notes are still in the database. Check your connection and try again.</p>
+              <p className="mt-2 text-xs text-stone-500">{loadError}</p>
+              <button onClick={loadRecipes} className="mt-5 rounded-full bg-ink px-5 py-3 text-xs font-semibold text-white hover:bg-olive">Try again</button>
+            </div>
+          ) : visibleRecipes.length ? (
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {visibleRecipes.map(recipe => (
                 <article key={recipe.id} className="rounded-2xl border border-stone-200 bg-white/80 p-5 transition hover:border-olive/50 hover:shadow-sm">

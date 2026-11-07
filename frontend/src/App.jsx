@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, Plus, Search, Pencil, Trash2, X, NotebookPen } from 'lucide-react';
 
-const API = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/$/, '');
+const API = (import.meta.env.VITE_API_URL || 'https://vajjha-recipes-api.onrender.com').replace(/\/$/, '');
 
 export default function App() {
   const [recipes, setRecipes] = useState([]);

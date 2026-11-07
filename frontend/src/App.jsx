@@ -1,29 +1,191 @@
-import{useEffect,useMemo,useState}from'react';import{Search,Plus,Heart,Clock3,ChefHat,ArrowUpRight,BookOpen,X,Pencil,Trash2,Leaf,Sparkles,Utensils}from'lucide-react';
-const API=(import.meta.env.VITE_API_URL||'http://localhost:8080').replace(/\/$/,'');
-const cats=['All recipes','Breakfast','Lunch','Dinner','Desserts','Snacks','Vegetarian','Quick & Easy','Drinks'];
-const demo=[];
-const norm=r=>({...r,prepMinutes:r.prepMinutes??r.prep_minutes??0,cookMinutes:r.cookMinutes??r.cook_minutes??0,imageUrl:r.imageUrl??r.image_url??'',isFavorite:r.isFavorite??r.is_favorite??false,category:typeof r.category==='object'?r.category.name:r.category??'Unsorted'});
-export default function App(){
-const[recipes,setRecipes]=useState([]),[active,setActive]=useState('All recipes'),[query,setQuery]=useState(''),[favs,setFavs]=useState(false),[chosen,setChosen]=useState(null),[editing,setEditing]=useState(null),[modal,setModal]=useState(false),[note,setNote]=useState('');
-const headers={'Content-Type':'application/json'};
-async function api(path,opts={}){let r=await fetch(API+path,{...opts,headers:{...headers,...opts.headers}});if(!r.ok)throw Error(String(r.status));return r.status===204?null:r.json()}
-async function load(){try{let data=await api('/api/recipes');setRecipes(data.map(norm))}catch{setNote('Your recipe book is ready. Add your first recipe whenever you like.')}}
-useEffect(()=>{load()},[]);
-const visible=useMemo(()=>recipes.filter(r=>(active==='All recipes'||r.category===active)&&(!favs||r.isFavorite)&&((r.title+' '+r.description).toLowerCase().includes(query.toLowerCase()))),[recipes,active,favs,query]);
-async function favorite(r){try{let v=norm(await api('/api/recipes/'+r.id+'/favorite',{method:'PATCH'}));setRecipes(a=>a.map(x=>x.id===r.id?v:x));if(chosen?.id===r.id)setChosen(v)}catch{setNote('Could not update favorite.')}}
-async function save(data){try{let body={...data,categoryId:data.categoryId};let v=norm(await api(editing?'/api/recipes/'+editing.id:'/api/recipes',{method:editing?'PUT':'POST',body:JSON.stringify(body)}));setRecipes(a=>editing?a.map(x=>x.id===v.id?v:x):[v,...a]);setModal(false);setEditing(null);setNote('Recipe saved to your journal.')}catch{setNote('Could not save. Check your API connection and category setup.')}}
-async function remove(r){if(!confirm('Delete this recipe?'))return;try{await api('/api/recipes/'+r.id,{method:'DELETE'});setRecipes(a=>a.filter(x=>x.id!==r.id));setChosen(null)}catch{setNote('Could not delete recipe.')}}
-return <div className="grain min-h-screen">
-<header className="sticky top-0 z-20 border-b border-stone-200/70 bg-paper/90 backdrop-blur-xl"><div className="mx-auto flex max-w-[1440px] items-center justify-between px-5 py-4 md:px-10"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-2xl bg-olive text-white"><ChefHat size={21}/></div><div><div className="font-display text-xl font-semibold leading-none">gather<span className="text-clay">.</span></div><div className="mt-1 text-[9px] font-bold uppercase tracking-[.22em] text-stone-400">Your recipe journal</div></div></div><nav className="hidden gap-8 text-sm font-medium text-stone-500 md:flex"><button onClick={()=>{setActive('All recipes');setFavs(false)}}>My collection</button><button onClick={()=>setFavs(!favs)}>Saved favorites</button><a href="#about">About</a></nav><div className="flex items-center gap-2"><button onClick={()=>{setEditing(null);setModal(true)}} className="flex items-center gap-2 rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-white hover:bg-olive"><Plus size={16}/><span className="hidden sm:inline">Add a recipe</span><span className="sm:hidden">Add</span></button></div></div></header>
-<main className="mx-auto max-w-[1440px] px-5 pb-16 md:px-10"><section className="relative mt-8 overflow-hidden rounded-[2rem] bg-[#e9eadf] px-7 py-10 md:mt-10 md:px-14 md:py-14"><div className="relative z-10 max-w-xl"><div className="mb-5 inline-flex items-center gap-2 rounded-full border border-olive/15 bg-white/60 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.18em] text-olive"><Sparkles size={13}/> Pure vegetarian · Family kitchen</div><h1 className="font-display text-4xl leading-[1.1] tracking-tight md:text-6xl">The joy of a meal<br/><em className="font-medium text-olive">worth remembering.</em></h1><p className="mt-5 max-w-md text-sm leading-7 text-stone-600 md:text-base">A personal home for pure vegetarian family recipes, traditional Brahmin cooking, and the dishes you’ll pass along.</p><div className="mt-8 flex items-center gap-6"><div><div className="font-display text-3xl">{String(recipes.length).padStart(2,'0')}</div><div className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-500">Recipes collected</div></div><div className="h-10 w-px bg-olive/20"/><div><div className="font-display text-3xl">{String(recipes.filter(r=>r.isFavorite).length).padStart(2,'0')}</div><div className="mt-1 text-[10px] font-bold uppercase tracking-widest text-stone-500">Little favorites</div></div></div></div><img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1100&q=90" className="absolute -right-4 -top-8 hidden h-[125%] w-[53%] rounded-l-[48%] object-cover md:block"/><div className="absolute inset-y-0 right-[40%] hidden w-40 bg-gradient-to-r from-[#e9eadf] to-transparent md:block"/></section>
-<section className="mt-12"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="text-[10px] font-bold uppercase tracking-[.24em] text-clay">The collection</p><h2 className="mt-2 font-display text-3xl md:text-4xl">What sounds good?</h2></div><div className="flex w-full gap-2 md:max-w-md"><div className="relative flex-1"><Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Find a favorite..." className="w-full rounded-full border border-stone-200 bg-white/80 py-3 pl-11 pr-4 text-sm outline-none focus:border-olive"/></div><button onClick={()=>setFavs(!favs)} className={'rounded-full border px-4 '+(favs?'border-olive bg-olive text-white':'border-stone-200 bg-white/80 text-stone-600')}><Heart size={17} fill={favs?'currentColor':'none'}/></button></div></div>
-<div className="hide-scrollbar mt-7 flex gap-2 overflow-x-auto pb-2">{cats.map(c=><button key={c} onClick={()=>{setActive(c);setFavs(false)}} className={'whitespace-nowrap rounded-full px-4 py-2.5 text-xs font-semibold '+(active===c&&!favs?'bg-ink text-white':'border border-stone-200/80 bg-white/70 text-stone-500 hover:border-olive')}>{c}</button>)}</div>
-<div className="mt-7 flex justify-between text-xs text-stone-500"><span>{visible.length} recipes / {favs?'Your favorites':active}</span><span className="font-semibold">Pure vegetarian</span></div>
-<div className="mt-5 grid gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">{visible.map((r,i)=><article key={r.id} onClick={()=>setChosen(r)} className="group cursor-pointer"><div className="relative aspect-[1.28] overflow-hidden rounded-[1.35rem] bg-sage"><img src={r.imageUrl||demo[i%demo.length].imageUrl} alt={r.title} className="h-full w-full object-cover transition duration-700 group-hover:scale-105"/><span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-olive">{r.category}</span><button onClick={e=>{e.stopPropagation();favorite(r)}} className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-white/90 text-clay"><Heart size={17} fill={r.isFavorite?'currentColor':'none'}/></button><span className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full bg-ink/85 px-3 py-1.5 text-[10px] font-semibold text-white"><Clock3 size={12}/>{r.prepMinutes+r.cookMinutes} min</span></div><div className="flex items-start justify-between gap-3 pt-4"><div><h3 className="font-display text-xl leading-snug group-hover:text-olive">{r.title}</h3><p className="mt-1.5 line-clamp-2 text-xs leading-5 text-stone-500">{r.description}</p></div><ArrowUpRight size={17} className="mt-1 shrink-0 text-stone-300 group-hover:text-olive"/></div><div className="mt-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-stone-400"><span>{r.difficulty||'Easy'}</span><span>•</span><span>{r.cuisine||'Home cooking'}</span></div></article>)}</div>
-{!visible.length&&<div className="rounded-3xl border border-dashed border-stone-300 py-20 text-center"><Utensils className="mx-auto text-stone-300"/><h3 className="mt-4 font-display text-2xl">Nothing simmering here yet.</h3><p className="mt-2 text-sm text-stone-500">Try another category or add your first recipe.</p><button onClick={()=>setModal(true)} className="mt-5 rounded-full bg-ink px-5 py-2.5 text-xs font-semibold text-white">Add a recipe</button></div>}</section>
-<section id="about" className="mt-20 flex flex-col items-center justify-between gap-5 border-t border-stone-200 py-8 text-center sm:flex-row sm:text-left"><div><div className="font-display text-xl">Made for the love of good food.</div><p className="mt-1 text-xs text-stone-500">A little archive of everyday deliciousness.</p></div><div className="flex items-center gap-2 text-xs text-stone-400"><Leaf size={15}/> Cook slowly. Gather often.</div></section></main>
-{note&&<button onClick={()=>setNote('')} className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-5 py-3 text-xs text-white shadow-xl">{note}</button>}
-{chosen&&<div className="modal-backdrop fixed inset-0 z-40 grid place-items-center overflow-y-auto p-4" onClick={()=>setChosen(null)}><div className="my-auto w-full max-w-3xl overflow-hidden rounded-[2rem] bg-paper shadow-2xl" onClick={e=>e.stopPropagation()}><div className="relative h-64 md:h-80"><img src={chosen.imageUrl} className="h-full w-full object-cover"/><button onClick={()=>setChosen(null)} className="absolute right-5 top-5 rounded-full bg-white p-2"><X/></button></div><div className="p-7 md:p-10"><p className="text-[10px] font-bold uppercase tracking-[.2em] text-clay">{chosen.category} · {chosen.cuisine}</p><div className="mt-2 flex items-start justify-between gap-4"><h2 className="font-display text-3xl md:text-4xl">{chosen.title}</h2><button onClick={()=>favorite(chosen)} className="rounded-full bg-white p-3 text-clay"><Heart fill={chosen.isFavorite?'currentColor':'none'}/></button></div><p className="mt-3 text-sm leading-6 text-stone-500">{chosen.description}</p><div className="mt-6 flex flex-wrap gap-5 text-xs text-stone-500"><span>{chosen.prepMinutes+chosen.cookMinutes} minutes</span><span>{chosen.difficulty}</span><span>{chosen.servings} servings</span></div><div className="mt-9 grid gap-8 md:grid-cols-[.8fr_1.2fr]"><div><h3 className="font-display text-2xl">Ingredients</h3><ul className="mt-4 space-y-3">{(chosen.ingredients||[]).map((x,i)=><li key={i} className="flex gap-3 text-sm text-stone-600"><span className="mt-2 h-1.5 w-1.5 rounded-full bg-olive"/>{typeof x==='string'?x:x.name}</li>)}</ul></div><div><h3 className="font-display text-2xl">Let's make it</h3><ol className="mt-4 space-y-4">{(chosen.instructions||[]).map((x,i)=><li key={i} className="flex gap-3 text-sm leading-6 text-stone-600"><span className="font-display text-lg text-clay">{String(i+1).padStart(2,'0')}</span>{typeof x==='string'?x:x.description}</li>)}</ol></div></div><div className="mt-9 flex justify-end gap-2 border-t border-stone-200 pt-6"><button onClick={()=>{setEditing(chosen);setModal(true);setChosen(null)}} className="flex items-center gap-2 rounded-full border border-stone-200 px-4 py-2.5 text-xs font-semibold"><Pencil size={14}/> Edit</button><button onClick={()=>remove(chosen)} className="flex items-center gap-2 rounded-full border border-red-100 px-4 py-2.5 text-xs font-semibold text-red-500"><Trash2 size={14}/> Delete</button></div></div></div></div>}
-{modal&&<RecipeForm initial={editing} onClose={()=>{setModal(false);setEditing(null)}} onSave={save}/>}</div>
+import { useEffect, useMemo, useState } from 'react';
+import { BookOpen, Plus, Search, Pencil, Trash2, X, NotebookPen } from 'lucide-react';
+
+const API = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/$/, '');
+
+export default function App() {
+  const [recipes, setRecipes] = useState([]);
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [notice, setNotice] = useState('');
+
+  async function request(path, options = {}) {
+    const response = await fetch(API + path, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    });
+    if (!response.ok) throw new Error('Request failed');
+    return response.status === 204 ? null : response.json();
+  }
+
+  async function loadRecipes() {
+    try {
+      const data = await request('/api/recipes');
+      setRecipes(data);
+    } catch {
+      setNotice('Could not connect to your recipe notebook. Please try again.');
+    }
+  }
+
+  useEffect(() => { loadRecipes(); }, []);
+
+  const visibleRecipes = useMemo(() => recipes.filter(recipe =>
+    (recipe.title || '').toLowerCase().includes(query.toLowerCase()) ||
+    (recipe.description || '').toLowerCase().includes(query.toLowerCase())
+  ), [recipes, query]);
+
+  function openNew() {
+    setEditing(null);
+    setShowForm(true);
+  }
+
+  function openEdit(recipe) {
+    setSelected(null);
+    setEditing(recipe);
+    setShowForm(true);
+  }
+
+  async function saveRecipe(title, notes) {
+    try {
+      const payload = {
+        title: title.trim(),
+        description: notes,
+        imageUrl: null,
+        prepMinutes: null,
+        cookMinutes: null,
+        servings: null,
+        difficulty: null,
+        cuisine: null,
+        categoryId: null,
+        category: null,
+        ingredients: [],
+        instructions: [],
+        tags: [],
+      };
+      const saved = await request(editing ? '/api/recipes/' + editing.id : '/api/recipes', {
+        method: editing ? 'PUT' : 'POST',
+        body: JSON.stringify(payload),
+      });
+      setRecipes(current => editing
+        ? current.map(item => item.id === saved.id ? saved : item)
+        : [saved, ...current]);
+      setShowForm(false);
+      setEditing(null);
+      setNotice('Saved in your recipe notebook.');
+    } catch {
+      setNotice('Could not save your note. Please try again.');
+    }
+  }
+
+  async function deleteRecipe(recipe) {
+    if (!window.confirm('Delete this recipe note?')) return;
+    try {
+      await request('/api/recipes/' + recipe.id, { method: 'DELETE' });
+      setRecipes(current => current.filter(item => item.id !== recipe.id));
+      setSelected(null);
+    } catch {
+      setNotice('Could not delete this note. Please try again.');
+    }
+  }
+
+  return (
+    <div className="grain min-h-screen text-ink">
+      <header className="sticky top-0 z-20 border-b border-stone-200/70 bg-paper/95 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4 md:px-8">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-olive text-white"><BookOpen size={20} /></div>
+            <div>
+              <div className="font-display text-xl font-semibold">My Recipe Book</div>
+              <div className="text-[10px] uppercase tracking-[.2em] text-stone-400">A simple personal notebook</div>
+            </div>
+          </div>
+          <button onClick={openNew} className="flex items-center gap-2 rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-white hover:bg-olive">
+            <Plus size={16} /> <span className="hidden sm:inline">Write a recipe</span><span className="sm:hidden">Add</span>
+          </button>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-5xl px-5 pb-16 pt-10 md:px-8 md:pt-14">
+        <section className="rounded-[2rem] bg-[#e9eadf] px-7 py-9 md:px-12 md:py-12">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.18em] text-olive"><NotebookPen size={15} /> Your own kitchen notes</div>
+          <h1 className="mt-4 max-w-2xl font-display text-4xl leading-tight md:text-6xl">Recipes worth <em className="text-olive">keeping.</em></h1>
+          <p className="mt-4 max-w-xl text-sm leading-7 text-stone-600 md:text-base">A quiet place to write down the recipes you want to remember and follow. Just a name and your notes—nothing extra.</p>
+          <div className="mt-7 font-display text-2xl">{recipes.length} <span className="font-sans text-xs font-medium uppercase tracking-widest text-stone-500">saved {recipes.length === 1 ? 'recipe' : 'recipes'}</span></div>
+        </section>
+
+        <section className="mt-10">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div><p className="text-[10px] font-bold uppercase tracking-[.22em] text-clay">Your collection</p><h2 className="mt-2 font-display text-3xl">My recipes</h2></div>
+            <div className="relative w-full sm:max-w-xs">
+              <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
+              <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search your notes..." className="w-full rounded-full border border-stone-200 bg-white px-11 py-3 text-sm outline-none focus:border-olive" />
+            </div>
+          </div>
+
+          {visibleRecipes.length ? (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {visibleRecipes.map(recipe => (
+                <article key={recipe.id} className="rounded-2xl border border-stone-200 bg-white/80 p-5 transition hover:border-olive/50 hover:shadow-sm">
+                  <button onClick={() => setSelected(recipe)} className="block w-full text-left">
+                    <h3 className="font-display text-2xl">{recipe.title}</h3>
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-stone-600">{recipe.description || 'No notes added yet.'}</p>
+                  </button>
+                  <div className="mt-5 flex justify-end gap-2 border-t border-stone-100 pt-3">
+                    <button onClick={() => openEdit(recipe)} aria-label="Edit recipe" className="rounded-full p-2 text-stone-500 hover:bg-stone-100 hover:text-olive"><Pencil size={16} /></button>
+                    <button onClick={() => deleteRecipe(recipe)} aria-label="Delete recipe" className="rounded-full p-2 text-stone-500 hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-6 rounded-3xl border border-dashed border-stone-300 px-5 py-16 text-center">
+              <NotebookPen size={28} className="mx-auto text-stone-300" />
+              <h3 className="mt-4 font-display text-2xl">{query ? 'No matching recipes' : 'Your notebook is empty.'}</h3>
+              <p className="mt-2 text-sm text-stone-500">{query ? 'Try a different search.' : 'When you find a recipe you want to follow, write it here.'}</p>
+              {!query && <button onClick={openNew} className="mt-5 rounded-full bg-ink px-5 py-3 text-xs font-semibold text-white">Write your first recipe</button>}
+            </div>
+          )}
+        </section>
+      </main>
+
+      {notice && <button onClick={() => setNotice('')} className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink px-5 py-3 text-xs text-white shadow-xl">{notice}</button>}
+
+      {selected && <div className="modal-backdrop fixed inset-0 z-40 grid place-items-center overflow-y-auto p-4" onClick={() => setSelected(null)}>
+        <div className="my-auto w-full max-w-2xl rounded-[2rem] bg-paper p-7 shadow-2xl md:p-10" onClick={event => event.stopPropagation()}>
+          <div className="flex items-start justify-between gap-4"><h2 className="font-display text-3xl">{selected.title}</h2><button onClick={() => setSelected(null)} className="rounded-full bg-white p-2"><X size={19} /></button></div>
+          <p className="mt-6 whitespace-pre-wrap text-sm leading-7 text-stone-700">{selected.description || 'No notes added yet.'}</p>
+          <div className="mt-8 flex justify-end gap-2 border-t border-stone-200 pt-5">
+            <button onClick={() => openEdit(selected)} className="flex items-center gap-2 rounded-full border border-stone-200 px-4 py-2.5 text-xs font-semibold"><Pencil size={14} /> Edit</button>
+            <button onClick={() => deleteRecipe(selected)} className="flex items-center gap-2 rounded-full border border-red-100 px-4 py-2.5 text-xs font-semibold text-red-500"><Trash2 size={14} /> Delete</button>
+          </div>
+        </div>
+      </div>}
+
+      {showForm && <RecipeForm initial={editing} onClose={() => { setShowForm(false); setEditing(null); }} onSave={saveRecipe} />}
+    </div>
+  );
 }
-function RecipeForm({initial,onClose,onSave}){const[title,S1]=useState(initial?.title||''),[description,S2]=useState(initial?.description||''),[category,S3]=useState(initial?.category||'Dinner'),[imageUrl,S4]=useState(initial?.imageUrl||''),[prep,S5]=useState(initial?.prepMinutes||10),[cook,S6]=useState(initial?.cookMinutes||20),[servings,S7]=useState(initial?.servings||2),[difficulty,S8]=useState(initial?.difficulty||'Easy'),[cuisine,S9]=useState(initial?.cuisine||''),[ingredients,S10]=useState((initial?.ingredients||[]).map(x=>typeof x==='string'?x:x.name).join('\n')),[instructions,S11]=useState((initial?.instructions||[]).map(x=>typeof x==='string'?x:x.description).join('\n'));const field='mt-1 w-full rounded-xl border border-stone-200 bg-white px-3.5 py-3 text-sm outline-none focus:border-olive';function submit(e){e.preventDefault();onSave({title,description,category,imageUrl,prepMinutes:+prep,cookMinutes:+cook,servings:+servings,difficulty,cuisine,categoryId:initial?.categoryId||null,ingredients:ingredients.split('\n').map(x=>x.trim()).filter(Boolean),instructions:instructions.split('\n').map(x=>x.trim()).filter(Boolean),tags:[]})}return <div className="modal-backdrop fixed inset-0 z-50 grid place-items-center overflow-y-auto p-4" onClick={onClose}><form onSubmit={submit} onClick={e=>e.stopPropagation()} className="my-auto w-full max-w-2xl rounded-[2rem] bg-paper p-6 shadow-2xl md:p-9"><div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[.2em] text-clay">Your kitchen notes</p><h2 className="mt-1 font-display text-3xl">{initial?'Edit recipe':'Add something delicious'}</h2></div><button type="button" onClick={onClose} className="rounded-full bg-white p-2"><X/></button></div><div className="mt-7 grid gap-4 sm:grid-cols-2"><label className="sm:col-span-2 text-xs font-semibold text-stone-600">Recipe name<input required value={title} onChange={e=>S1(e.target.value)} className={field}/></label><label className="sm:col-span-2 text-xs font-semibold text-stone-600">Description<textarea value={description} onChange={e=>S2(e.target.value)} className={field} rows="2"/></label><label className="text-xs font-semibold text-stone-600">Category<select value={category} onChange={e=>S3(e.target.value)} className={field}>{cats.slice(1).map(x=><option key={x}>{x}</option>)}</select></label><label className="text-xs font-semibold text-stone-600">Cuisine<input value={cuisine} onChange={e=>S9(e.target.value)} className={field}/></label><label className="text-xs font-semibold text-stone-600">Image URL<input value={imageUrl} onChange={e=>S4(e.target.value)} className={field}/></label><label className="text-xs font-semibold text-stone-600">Difficulty<select value={difficulty} onChange={e=>S8(e.target.value)} className={field}>{['Easy','Medium','Hard'].map(x=><option key={x}>{x}</option>)}</select></label><label className="text-xs font-semibold text-stone-600">Prep minutes<input type="number" min="0" value={prep} onChange={e=>S5(e.target.value)} className={field}/></label><label className="text-xs font-semibold text-stone-600">Cook minutes<input type="number" min="0" value={cook} onChange={e=>S6(e.target.value)} className={field}/></label><label className="text-xs font-semibold text-stone-600">Servings<input type="number" min="1" value={servings} onChange={e=>S7(e.target.value)} className={field}/></label><label className="sm:col-span-2 text-xs font-semibold text-stone-600">Ingredients — one per line<textarea required value={ingredients} onChange={e=>S10(e.target.value)} rows="4" className={field}/></label><label className="sm:col-span-2 text-xs font-semibold text-stone-600">Method — one step per line<textarea required value={instructions} onChange={e=>S11(e.target.value)} rows="4" className={field}/></label></div><div className="mt-7 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-full px-5 py-3 text-xs font-semibold text-stone-500">Cancel</button><button className="rounded-full bg-ink px-6 py-3 text-xs font-semibold text-white">Save recipe</button></div></form></div>}
+
+function RecipeForm({ initial, onClose, onSave }) {
+  const [title, setTitle] = useState(initial?.title || '');
+  const [notes, setNotes] = useState(initial?.description || '');
+  return (
+    <div className="modal-backdrop fixed inset-0 z-50 grid place-items-center overflow-y-auto p-4" onClick={onClose}>
+      <form onSubmit={event => { event.preventDefault(); onSave(title, notes); }} onClick={event => event.stopPropagation()} className="my-auto w-full max-w-2xl rounded-[2rem] bg-paper p-6 shadow-2xl md:p-9">
+        <div className="flex items-center justify-between">
+          <div><p className="text-[10px] font-bold uppercase tracking-[.2em] text-clay">Your kitchen notebook</p><h2 className="mt-1 font-display text-3xl">{initial ? 'Edit recipe' : 'Write a recipe'}</h2></div>
+          <button type="button" onClick={onClose} className="rounded-full bg-white p-2"><X size={19} /></button>
+        </div>
+        <label className="mt-7 block text-xs font-semibold text-stone-600">Recipe name
+          <input required autoFocus value={title} onChange={event => setTitle(event.target.value)} placeholder="Give your recipe a name" className="mt-2 w-full rounded-xl border border-stone-200 bg-white px-4 py-3.5 text-sm outline-none focus:border-olive" />
+        </label>
+        <label className="mt-5 block text-xs font-semibold text-stone-600">Your notes
+          <textarea value={notes} onChange={event => setNotes(event.target.value)} placeholder="Write the ingredients, steps, tips, or anything you want to remember..." rows={12} className="mt-2 w-full resize-y rounded-xl border border-stone-200 bg-white px-4 py-3.5 text-sm leading-7 outline-none focus:border-olive" />
+        </label>
+        <div className="mt-7 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-full px-5 py-3 text-xs font-semibold text-stone-500">Cancel</button><button type="submit" className="rounded-full bg-ink px-6 py-3 text-xs font-semibold text-white">Save recipe</button></div>
+      </form>
+    </div>
+  );
+}

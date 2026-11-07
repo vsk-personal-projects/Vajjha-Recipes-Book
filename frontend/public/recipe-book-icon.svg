@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#143d2a"/><stop offset="1" stop-color="#082719"/></linearGradient><linearGradient id="gold" x2="0" y2="1"><stop stop-color="#ffd36d"/><stop offset="1" stop-color="#c88a22"/></linearGradient><linearGradient id="paper" x2="0" y2="1"><stop stop-color="#fff9eb"/><stop offset="1" stop-color="#eee2c9"/></linearGradient></defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/><rect x="24" y="24" width="464" height="464" rx="92" fill="url(#paper)" stroke="#d5a33f" stroke-width="5"/>
+<circle cx="256" cy="244" r="176" fill="none" stroke="url(#gold)" stroke-width="9"/>
+<path d="M158 203c-25-6-42-27-42-53 0-31 25-56 56-56 10 0 19 3 27 7 8-35 39-61 77-61 41 0 74 33 74 74 0 5 0 10-1 14 31 4 55 30 55 62 0 34-27 62-61 62H168c-31 0-56-25-56-56 0-24 15-44 36-53z" fill="#fffdf6" stroke="#123d29" stroke-width="13" stroke-linejoin="round"/>
+<path d="M171 211h172c27 0 49 22 49 49v151H146V236c0-14 11-25 25-25z" fill="#0d432b" stroke="#123d29" stroke-width="13"/>
+<path d="M145 249h-19c-15 0-27 12-27 27s12 27 27 27h19M145 313h-19c-15 0-27 12-27 27s12 27 27 27h19" fill="none" stroke="url(#gold)" stroke-width="13" stroke-linecap="round"/>
+<path d="M171 211h172c27 0 49 22 49 49v151H146V236c0-14 11-25 25-25z" fill="none" stroke="#d6a13a" stroke-width="7"/>
+<path d="M189 295c32-25 97-32 145-4" fill="none" stroke="#f6e8c8" stroke-width="5" opacity=".7"/>
+<text x="255" y="333" text-anchor="middle" fill="#fff4df" font-family="Georgia,serif" font-size="54" font-style="italic" font-weight="bold">Recipes</text>
+<path d="M180 369q75 25 153-2" fill="none" stroke="#efb642" stroke-width="8" stroke-linecap="round"/>
+<path d="M102 390c-33-5-54-31-56-66 33 3 54 22 56 66zm300 4c34-5 56-30 59-65-35 2-56 21-59 65z" fill="#4d8a36" stroke="#27632e" stroke-width="5"/>
+<path d="M256 392c-27-20-32-44-16-61 22 12 27 32 16 61zm0 0c27-20 32-44 16-61-22 12-27 32-16 61z" fill="#79a94d"/>
+<path d="M91 427q165 35 330 0" fill="none" stroke="url(#gold)" stroke-width="12" stroke-linecap="round"/>
+</svg>

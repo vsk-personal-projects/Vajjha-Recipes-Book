@@ -1,0 +1,1 @@
+package com.vajjha.recipes.repository;import com.vajjha.recipes.model.RecipeCategory;import org.springframework.data.jpa.repository.JpaRepository;import java.util.Optional;public interface CategoryRepository extends JpaRepository<RecipeCategory,Long>{Optional<RecipeCategory>findByNameIgnoreCase(String name);}

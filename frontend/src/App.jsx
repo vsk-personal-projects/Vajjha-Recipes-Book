@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, Plus, Search, Pencil, Trash2, X, NotebookPen } from 'lucide-react';
 
 const API = (import.meta.env.VITE_API_URL || 'http://localhost:8080').replace(/\/$/, '');
@@ -10,6 +10,8 @@ export default function App() {
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [notice, setNotice] = useState('');
+  const [saving, setSaving] = useState(false);
+  const saveLock = useRef(false);
 
   async function request(path, options = {}) {
     const response = await fetch(API + path, {
@@ -47,7 +49,10 @@ export default function App() {
     setShowForm(true);
   }
 
-  async function saveRecipe(title, notes) {
+  async function saveRecipe(title, notes, idempotencyKey) {
+    if (saveLock.current) return false;
+    saveLock.current = true;
+    setSaving(true);
     try {
       const payload = {
         title: title.trim(),
@@ -66,6 +71,7 @@ export default function App() {
       };
       const saved = await request(editing ? '/api/recipes/' + editing.id : '/api/recipes', {
         method: editing ? 'PUT' : 'POST',
+        headers: editing ? { 'If-Match': String(editing.version ?? 0) } : { 'Idempotency-Key': idempotencyKey },
         body: JSON.stringify(payload),
       });
       setRecipes(current => editing
@@ -74,8 +80,13 @@ export default function App() {
       setShowForm(false);
       setEditing(null);
       setNotice('Saved in your recipe notebook.');
-    } catch {
-      setNotice('Could not save your note. Please try again.');
+      return true;
+    } catch (error) {
+      setNotice(error.message === 'Request failed' ? 'This note changed elsewhere or could not be saved. Refresh and try again.' : 'Connection is slow. Your save can be retried safely.');
+      return false;
+    } finally {
+      saveLock.current = false;
+      setSaving(false);
     }
   }
 
@@ -163,28 +174,39 @@ export default function App() {
         </div>
       </div>}
 
-      {showForm && <RecipeForm initial={editing} onClose={() => { setShowForm(false); setEditing(null); }} onSave={saveRecipe} />}
+      {showForm && <RecipeForm initial={editing} saving={saving} onClose={() => { if (!saving) { setShowForm(false); setEditing(null); } }} onSave={saveRecipe} />}
     </div>
   );
 }
 
-function RecipeForm({ initial, onClose, onSave }) {
+function RecipeForm({ initial, onClose, onSave, saving }) {
   const [title, setTitle] = useState(initial?.title || '');
   const [notes, setNotes] = useState(initial?.description || '');
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const [idempotencyKey] = useState(() => (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`));
+  async function submit(event) {
+    event.preventDefault();
+    if (submittingRef.current || saving) return;
+    submittingRef.current = true;
+    setSubmitting(true);
+    const ok = await onSave(title, notes, idempotencyKey);
+    if (!ok) { submittingRef.current = false; setSubmitting(false); }
+  }
   return (
     <div className="modal-backdrop fixed inset-0 z-50 grid place-items-center overflow-y-auto p-4" onClick={onClose}>
-      <form onSubmit={event => { event.preventDefault(); onSave(title, notes); }} onClick={event => event.stopPropagation()} className="my-auto w-full max-w-2xl rounded-[2rem] bg-paper p-6 shadow-2xl md:p-9">
+      <form onSubmit={submit} onClick={event => event.stopPropagation()} className="my-auto w-full max-w-2xl rounded-[2rem] bg-paper p-6 shadow-2xl md:p-9">
         <div className="flex items-center justify-between">
           <div><p className="text-[10px] font-bold uppercase tracking-[.2em] text-clay">Your kitchen notebook</p><h2 className="mt-1 font-display text-3xl">{initial ? 'Edit recipe' : 'Write a recipe'}</h2></div>
           <button type="button" onClick={onClose} className="rounded-full bg-white p-2"><X size={19} /></button>
         </div>
         <label className="mt-7 block text-xs font-semibold text-stone-600">Recipe name
-          <input id="recipe-name" name="recipe-name" required autoFocus value={title} onChange={event => setTitle(event.target.value)} placeholder="Give your recipe a name" className="mt-2 w-full rounded-xl border border-stone-200 bg-white px-4 py-3.5 text-sm outline-none focus:border-olive" />
+          <input id="recipe-name" name="recipe-name" disabled={saving || submitting} required autoFocus value={title} onChange={event => setTitle(event.target.value)} placeholder="Give your recipe a name" className="mt-2 w-full rounded-xl border border-stone-200 bg-white px-4 py-3.5 text-sm outline-none focus:border-olive" />
         </label>
         <label className="mt-5 block text-xs font-semibold text-stone-600">Your notes
-          <textarea id="recipe-notes" name="recipe-notes" value={notes} onChange={event => setNotes(event.target.value)} placeholder="Write the ingredients, steps, tips, or anything you want to remember..." rows={12} className="mt-2 w-full resize-y rounded-xl border border-stone-200 bg-white px-4 py-3.5 text-sm leading-7 outline-none focus:border-olive" />
+          <textarea id="recipe-notes" name="recipe-notes" disabled={saving || submitting} value={notes} onChange={event => setNotes(event.target.value)} placeholder="Write the ingredients, steps, tips, or anything you want to remember..." rows={12} className="mt-2 w-full resize-y rounded-xl border border-stone-200 bg-white px-4 py-3.5 text-sm leading-7 outline-none focus:border-olive" />
         </label>
-        <div className="mt-7 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-full px-5 py-3 text-xs font-semibold text-stone-500">Cancel</button><button type="submit" className="rounded-full bg-ink px-6 py-3 text-xs font-semibold text-white">Save recipe</button></div>
+        <div className="mt-7 flex justify-end gap-2"><button type="button" disabled={saving || submitting} onClick={onClose} className="rounded-full px-5 py-3 text-xs font-semibold text-stone-500 disabled:opacity-40">Cancel</button><button type="submit" disabled={saving || submitting} className="inline-flex min-w-36 items-center justify-center gap-2 rounded-full bg-ink px-6 py-3 text-xs font-semibold text-white transition hover:bg-olive disabled:cursor-wait disabled:opacity-80"><span className={`save-spinner ${saving || submitting ? 'is-visible' : ''}`} aria-hidden="true" />{saving || submitting ? 'Saving safely…' : 'Save recipe'}</button></div>
       </form>
     </div>
   );

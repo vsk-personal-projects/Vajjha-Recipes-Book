@@ -120,7 +120,7 @@ export default function App() {
             <div><p className="text-[10px] font-bold uppercase tracking-[.22em] text-clay">Your collection</p><h2 className="mt-2 font-display text-3xl">My recipes</h2></div>
             <div className="relative w-full sm:max-w-xs">
               <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
-              <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search your notes..." className="w-full rounded-full border border-stone-200 bg-white px-11 py-3 text-sm outline-none focus:border-olive" />
+              <input id="recipe-search" name="recipe-search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search your notes..." className="w-full rounded-full border border-stone-200 bg-white px-11 py-3 text-sm outline-none focus:border-olive" />
             </div>
           </div>
 
@@ -179,10 +179,10 @@ function RecipeForm({ initial, onClose, onSave }) {
           <button type="button" onClick={onClose} className="rounded-full bg-white p-2"><X size={19} /></button>
         </div>
         <label className="mt-7 block text-xs font-semibold text-stone-600">Recipe name
-          <input required autoFocus value={title} onChange={event => setTitle(event.target.value)} placeholder="Give your recipe a name" className="mt-2 w-full rounded-xl border border-stone-200 bg-white px-4 py-3.5 text-sm outline-none focus:border-olive" />
+          <input id="recipe-name" name="recipe-name" required autoFocus value={title} onChange={event => setTitle(event.target.value)} placeholder="Give your recipe a name" className="mt-2 w-full rounded-xl border border-stone-200 bg-white px-4 py-3.5 text-sm outline-none focus:border-olive" />
         </label>
         <label className="mt-5 block text-xs font-semibold text-stone-600">Your notes
-          <textarea value={notes} onChange={event => setNotes(event.target.value)} placeholder="Write the ingredients, steps, tips, or anything you want to remember..." rows={12} className="mt-2 w-full resize-y rounded-xl border border-stone-200 bg-white px-4 py-3.5 text-sm leading-7 outline-none focus:border-olive" />
+          <textarea id="recipe-notes" name="recipe-notes" value={notes} onChange={event => setNotes(event.target.value)} placeholder="Write the ingredients, steps, tips, or anything you want to remember..." rows={12} className="mt-2 w-full resize-y rounded-xl border border-stone-200 bg-white px-4 py-3.5 text-sm leading-7 outline-none focus:border-olive" />
         </label>
         <div className="mt-7 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-full px-5 py-3 text-xs font-semibold text-stone-500">Cancel</button><button type="submit" className="rounded-full bg-ink px-6 py-3 text-xs font-semibold text-white">Save recipe</button></div>
       </form>

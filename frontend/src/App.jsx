@@ -95,7 +95,7 @@ export default function App() {
       <header className="sticky top-0 z-20 border-b border-stone-200/70 bg-paper/95 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4 md:px-8">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-olive text-white"><BookOpen size={20} /></div>
+            <img src="/recipe-book-icon.svg" alt="" className="h-11 w-11 rounded-xl object-cover shadow-sm" />
             <div>
               <div className="font-display text-xl font-semibold">My Recipe Book</div>
               <div className="text-[10px] uppercase tracking-[.2em] text-stone-400">A simple personal notebook</div>

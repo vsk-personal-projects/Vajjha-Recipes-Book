@@ -1,2 +1,19 @@
-package com.vajjha.recipes.config;import jakarta.servlet.*;import jakarta.servlet.http.*;import org.springframework.beans.factory.annotation.Value;import org.springframework.stereotype.Component;import org.springframework.web.filter.OncePerRequestFilter;import java.io.IOException;import java.nio.charset.StandardCharsets;import java.security.MessageDigest;
-@Component public class AccessKeyFilter extends OncePerRequestFilter{@Value("${app.access-key:}")private String key;@Override protected boolean shouldNotFilter(HttpServletRequest r){return r.getRequestURI().equals("/api/health")||r.getRequestURI().startsWith("/actuator/health")||r.getMethod().equals("OPTIONS");}@Override protected void doFilterInternal(HttpServletRequest req,HttpServletResponse res,FilterChain chain)throws ServletException,IOException{String supplied=req.getHeader("X-APP-KEY");if(key==null||key.isBlank()||supplied==null||!MessageDigest.isEqual(key.getBytes(StandardCharsets.UTF_8),supplied.getBytes(StandardCharsets.UTF_8))){res.setStatus(401);res.setContentType("application/json");res.getWriter().write("{\"error\":\"A valid cookbook access key is required.\"}");return;}chain.doFilter(req,res);}}
+package com.vajjha.recipes.config;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+import java.io.IOException;
+
+/** Public personal cookbook API: no access-key prompt or header is required. */
+@Component
+public class AccessKeyFilter extends OncePerRequestFilter {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+        chain.doFilter(request, response);
+    }
+}
